@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pata Hela Bet - Mfumo Kamili</title>
+    <style>
+        /* === GLOBAL STYLES === */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0f172a; color: #f8fafc; padding-bottom: 50px; }
+
+        /* === HEADER & NAVIGATION === */
+        header { background-color: #1e293b; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #22c55e; sticky: top; }
+        .logo { font-size: 24px; font-weight: bold; color: #22c55e; }
+        .user-wallet { display: flex; align-items: center; gap: 15px; }
+        .balance-box { background: #0f172a; padding: 8px 15px; border-radius: 20px; border: 1px solid #334155; font-weight: bold; color: #38bdf8; }
+        .btn-deposit { background: #22c55e; color: #000; padding: 8px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-deposit:hover { background: #16a34a; }
+
+        /* === CATEGORY NAVIGATION === */
+        .categories { display: flex; gap: 10px; padding: 15px 20px; background: #1e293b; margin-bottom: 20px; overflow-x: auto; }
+        .cat-btn { background: #334155; color: #fff; padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; white-space: nowrap; }
+        .cat-btn.active { background: #22c55e; color: #000; font-weight: bold; }
+
+        /* === MAIN LAYOUT === */
+        .main-container { display: flex; flex-wrap: wrap; gap: 20px; padding: 0 20px; }
+        .matches-section { flex: 2; min-width: 320px; }
+        .sidebar { flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 20px; }
+
+        /* === MATCH CARDS === */
+        .section-title { font-size: 18px; margin-bottom: 15px; color: #94a3b8; border-left: 4px solid #22c55e; padding-left: 10px; }
+        .match-card { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #334155; }
+        .match-header { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; margin-bottom: 10px; }
+        .teams-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; }
+        .odds-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .odd-btn { background: #0f172a; border: 1px solid #334155; color: #fff; padding: 10px; border-radius: 6px; cursor: pointer; text-align: center; display: flex; flex-direction: column; gap: 5px; }
+        .odd-btn:hover, .odd-btn.selected { background: #22c55e; color: #000; border-color: #22c55e; }
+        .odd-btn span.label { font-size: 12px; opacity: 0.8; }
+        .odd-btn span.value { font-weight: bold; }
+
+        /* === BET SLIP === */
+        .card-box { background: #1e293b; padding: 20px; border-radius: 8px; border: 1px solid #334155; }
+        .slip-header { font-size: 18px; font-weight: bold; color: #22c55e; margin-bottom: 15px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        .slip-item { background: #0f172a; padding: 10px; border-radius: 6px; margin-bottom: 10px; position: relative; border-left: 3px solid #22c55e; }
+        .slip-item .remove-btn { position: absolute; right: 10px; top: 10px; color: #ef4444; cursor: pointer; font-weight: bold; }
+        .stake-input { width: 100%; padding: 12px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 6px; margin: 15px 0; font-size: 16px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+        .summary-row.total { font-size: 18px; font-weight: bold; color: #22c55e; border-top: 1px solid #334155; padding-top: 10px; }
+        .btn-place-bet { width: 100%; padding: 14px; background: #22c55e; color: #000; border: none; font-weight: bold; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        .btn-place-bet:disabled { background: #475569; cursor: not-allowed; }
+
+        /* === HISTORY SECTION === */
+        .history-item { background: #0f172a; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-size: 13px; border: 1px solid #334155; }
+
+        /* === MODAL (DEPOSIT) === */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: #1e293b; padding: 25px; border-radius: 10px; width: 90%; max-width: 400px; text-align: center; }
+        .modal-content input { width: 100%; padding: 10px; margin: 15px 0; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 5px; }
+        .modal-btns { display: flex; gap: 10px; }
+        .modal-btns button { flex: 1; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header>
+        <div class="logo">PATA HELA BET</div>
+        <div class="user-wallet">
+            <div class="balance-box">Salio: TZS <span id="user-balance">10000</span></div>
+            <button class="btn-deposit" onclick="openDepositModal()">Weka Hela</button>
+        </div>
+    </header>
+
+    <!-- CATEGORIES -->
+    <div class="categories">
+        <button class="cat-btn active">Mpira wa Miguu</button>
+        <button class="cat-btn">Basketball</button>
+        <button class="cat-btn">Tennis</button>
+        <button class="cat-btn">Esports</button>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="main-container">
+
+        <!-- LIST OF MATCHES -->
+        <div class="matches-section">
+            <div class="section-title">MECHI MAARUFU ZINAZOFUATA</div>
+            <div id="matches-list"></div>
+        </div>
+
+        <!-- SIDEBAR (BET SLIP & HISTORY) -->
+        <div class="sidebar">
+
+            <!-- BET SLIP -->
+            <div class="card-box">
+                <div class="slip-header">Kipande cha Bet (Bet Slip)</div>
+                <div id="slip-items">
+                    <p style="color: #64748b; text-align: center; padding: 20px 0;">Chagua mechi kuanza kuweka bet.</p>
+                </div>
+
+                <div id="slip-summary" style="display: none;">
+                    <input type="number" id="stake-amount" class="stake-input" placeholder="Ingiza kiasi (Mfano: 1000)" oninput="calculateReturns()">
+                    <div class="summary-row">
+                        <span>Jumla ya Odds:</span>
+                        <span id="total-odds">1.00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Ushindi Tarajiwa:</span>
+                        <span>TZS <span id="possible-payout">0</span></span>
+                    </div>
+                    <button class="btn-place-bet" id="place-bet-btn" onclick="submitBet()">WEKA BET SASA</button>
+                </div>
+            </div>
+
+            <!-- MY BETS HISTORY -->
+            <div class="card-box">
+                <div class="slip-header" style="color: #38bdf8;">Bet Zangu za Hivi Karibuni</div>
+                <div id="history-list">
+                    <p style="color: #64748b; text-align: center;">Hujaweka bet yoyote bado.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- DEPOSIT MODAL -->
+    <div class="modal" id="depositModal">
+        <div class="modal-content">
+            <h3>Weka Salio (Test Deposit)</h3>
+            <p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Ingiza kiasi unachotaka kuongeza kwenye akaunti yako.</p>
+            <input type="number" id="deposit-amount" placeholder="Kiasi (TZS)">
+            <div class="modal-btns">
+                <button style="background: #22c55e; color: #000;" onclick="confirmDeposit()">Weka</button>
+                <button style="background: #ef4444; color: #fff;" onclick="closeDepositModal()">Ghairi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // === DATABASE YA MECHI ZA MAJARIBIO ===
+        const matchesData = [
+            { id: 1, league: "Tanzania - Ligi Kuu", time: "Leo, 19:00", home: "Simba SC", away: "Yanga SC", odds: { home: 2.30, draw: 3.10, away: 2.80 } },
+            { id: 2, league: "Uingereza - Premier League", time: "Kesho, 18:30", home: "Arsenal", away: "Chelsea", odds: { home: 1.85, draw: 3.60, away: 4.20 } },
+            { id: 3, league: "Uhispania - La Liga", time: "Kesho, 21:00", home: "Real Madrid", away: "Barcelona", odds: { home: 2.15, draw: 3.40, away: 3.10 } },
+            { id: 4, league: "Ujerumani - Bundesliga", time: "Ijumaa, 20:30", home: "Bayern Munich", away: "Dortmund", odds: { home: 1.50, draw: 4.50, away: 5.80 } }
+        ];
+
+        let selectedBets = [];
+        let userBalance = 10000;
+
+        // === FUNCTION YA KUONYESHA MECHI ===
+        function renderMatches() {
+            const container = document.getElementById('matches-list');
+            container.innerHTML = '';
+
+            matchesData.forEach(match => {
+                container.innerHTML += `
+                    <div class="match-card">
+                        <div class="match-header">
+                            <span>${match.league}</span>
+                            <span>${match.time}</span>
+                        </div>
+                        <div class="teams-title">${match.home} vs ${match.away}</div>
+                        <div class="odds-grid">
+                            <button class="odd-btn ${isBetSelected(match.id, 'Home') ? 'selected' : ''}" onclick="toggleBet(${match.id}, '${match.home} vs ${match.away}', '${match.home}', ${match.odds.home})">
+                                <span class="label">1 (Nyumbani)</span>
+                                <span class="value">${match.odds.home.toFixed(2)}</span>
+                            </button>
+                            <button class="odd-btn ${isBetSelected(match.id, 'Draw') ? 'selected' : ''}" onclick="toggleBet(${match.id}, '${match.home} vs ${match.away}', 'Sare', ${match.odds.draw})">
+                                <span class="label">X (Sare)</span>
+                                <span class="value">${match.odds.draw.toFixed(2)}</span>
+                            </button>
+                            <button class="odd-btn ${isBetSelected(match.id, 'Away') ? 'selected' : ''}" onclick="toggleBet(${match.id}, '${match.home} vs ${match.away}', '${match.away}', ${match.odds.away})">
+                                <span class="label">2 (Ugenini)</span>
+                                <span class="value">${match.odds.away.toFixed(2)}</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // === FUNCTION YA KUANGALIA KAMA ODD IMECHAGULIWA ===
+        function isBetSelected(matchId, pickName) {
+            return selectedBets.some(b => b.matchId === matchId && b.pick === pickName);
+        }
+
+        // === FUNCTION YA KUONGEZA AU KUTOA ODD KWENYE SLIP ===
+        function toggleBet(matchId, matchTitle, pick, odd) {
+            const index = selectedBets.findIndex(b => b.matchId === matchId);
+
+            if (index > -1) {
+                if (selectedBets[index].pick === pick) {
+                    selectedBets.splice(index, 1); // Ondoa ikiwa imebonyezwa tena
+                } else {
+                    selectedBets[index] = { matchId, matchTitle, pick, odd }; // Badilisha chaguo la mechi hiyo
+                }
+            } else {
+                selectedBets.push({ matchId, matchTitle, pick, odd }); // Ongeza mpya
+            }
+
+            renderMatches();
+            updateBetSlip();
+        }
+
+        // === FUNCTION YA KUREKEBISHA BET SLIP ===
+        function updateBetSlip() {
+            const slipContainer = document.getElementById('slip-items');
+            const summaryBox = document.getElementById('slip-summary');
+
+            if (selectedBets.length === 0) {
+                slipContainer.innerHTML = '<p style="color: #64748b; text-align: center; padding: 20px 0;">Chagua mechi kuanza kuweka bet.</p>';
+                summaryBox.style.display = 'none';
+                return;
+            }
+
+            summaryBox.style.display = 'block';
+            slipContainer.innerHTML = '';
+
+            let totalOdds = 1;
+
+            selectedBets.forEach((bet, i) => {
+                totalOdds *= bet.odd;
+                slipContainer.innerHTML += `
+                    <div class="slip-item">
+                        <span class="remove-btn" onclick="removeSingleBet(${i})">&times;</span>
+                        <div style="font-size: 13px; font-weight: bold;">${bet.matchTitle}</div>
+                        <div style="font-size: 12px; color: #22c55e;">Uteuzi: ${bet.pick} @ ${bet.odd.toFixed(2)}</div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('total-odds').innerText = totalOdds.toFixed(2);
+            calculateReturns();
+        }
+
+        // === REMOVE SINGLE BET ===
+        function removeSingleBet(index) {
+            selectedBets.splice(index, 1);
+            renderMatches();
+            updateBetSlip();
+        }
+
+        // === HESABU USHINDI TARAJIWA ===
+        function calculateReturns() {
+            const totalOdds = parseFloat(document.getElementById('total-odds').innerText) || 0;
+            const stake = parseFloat(document.getElementById('stake-amount').value) || 0;
+            const payout = totalOdds * stake;
+
+            document.getElementById('possible-payout').innerText = Math.round(payout).toLocaleString();
+        }
+
+        // === KUWEKA BET (SUBMIT BET) ===
+        function submitBet() {
+            const stake = parseFloat(document.getElementById('stake-amount').value);
+
+            if (!stake || stake <= 0) {
+                alert('Tafadhali ingiza kiasi cha kuweka!');
+                return;
+            }
+
+            if (stake > userBalance) {
+                alert('Salio lako halitoshi! Bonyeza "Weka Hela" ili kuongeza salio.');
+                return;
+            }
+
+            // Kata salio
+            userBalance -= stake;
+            document.getElementById('user-balance').innerText = userBalance.toLocaleString();
+
+            // Record Kwenye History
+            const totalOdds = parseFloat(document.getElementById('total-odds').innerText);
+            const payout = Math.round(totalOdds * stake);
+            
+            addBetToHistory(selectedBets.length, stake, payout);
+
+            alert('Bet yako imewekwa kikamilifu!');
+
+            // Reset
+            selectedBets = [];
+            document.getElementById('stake-amount').value = '';
+            renderMatches();
+            updateBetSlip();
+        }
+
+        // === ADD TO HISTORY ===
+        function addBetToHistory(totalMatches, stake, payout) {
+            const historyContainer = document.getElementById('history-list');
+            
+            if (historyContainer.innerHTML.includes('Hujaweka bet yoyote')) {
+                historyContainer.innerHTML = '';
+            }
+
+            historyContainer.innerHTML = `
+                <div class="history-item">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <strong style="color: #22c55e;">Multibet (${totalMatches} Mechi)</strong>
+                        <span style="color: #e2e8f0;">TZS ${stake.toLocaleString()}</span>
+                    </div>
+                    <div style="color: #94a3b8;">Ushindi Tarajiwa: TZS ${payout.toLocaleString()}</div>
+                    <div style="font-size: 10px; color: #64748b; margin-top: 5px;">Hali: Inasubiri Matokeo</div>
+                </div>
+            ` + historyContainer.innerHTML;
+        }
+
+        // === MODAL DEPOSIT FUNCTIONS ===
+        function openDepositModal() { document.getElementById('depositModal').style.display = 'flex'; }
+        function closeDepositModal() { document.getElementById('depositModal').style.display = 'none'; }
+        
+        function confirmDeposit() {
+            const amount = parseFloat(document.getElementById('deposit-amount').value);
+            if (amount && amount > 0) {
+                userBalance += amount;
+                document.getElementById('user-balance').innerText = userBalance.toLocaleString();
+                alert(`Imefanikiwa! TZS ${amount.toLocaleString()} zimeongezwa kwenye salio lako.`);
+                document.getElementById('deposit-amount').value = '';
+                closeDepositModal();
+            } else {
+                alert('Ingiza kiasi sahihi!');
+            }
+        }
+
+        // Zindua mfumo
+        renderMatches();
+    </script>
+</body>
+</html>
